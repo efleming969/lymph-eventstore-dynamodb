@@ -1,0 +1,18 @@
+version: '2'
+
+services:
+  database:
+    image: "efleming969/aws-dynamo:0.1.0"
+    ports:
+      - "8000:8000"
+  library:
+    image: "efleming969/aws-node:0.1.0"
+    working_dir: /usr/src/app
+    volumes:
+      - .:/usr/src/app
+    links:
+      - database
+    environment:
+      - AWS_ACCESS_KEY_ID=DUMMY_KEY
+      - AWS_SECRET_ACCESS_KEY=DUMMY_SECRET
+    command: bash

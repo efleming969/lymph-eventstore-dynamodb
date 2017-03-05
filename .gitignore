@@ -1,0 +1,7 @@
+node_modules
+tmp
+deps.js
+build
+.nyc_output
+coverage
+.DS_Store
