@@ -3,15 +3,13 @@ var Tap = require( "tap" )
 
 var EventStore = require( "./index.js" )
 
-var DYNAMODB_REGION = "local"
-var DYNAMODB_ENDPOINT = "http://database:8000"
 var DYNAMODB_TABLENAME = "events"
 
 Tap.test( "dynamodb event store", function( t ) {
 
   var db = new AWS.DynamoDB( {
-    region: DYNAMODB_REGION
-  , endpoint: DYNAMODB_ENDPOINT
+    region: process.env.AWS_REGION
+  , endpoint: process.env.AWS_DYNAMODB_ENDPOINT
   } )
 
   t.beforeEach( function( callback ) {
@@ -26,39 +24,22 @@ Tap.test( "dynamodb event store", function( t ) {
       , { AttributeName: "version", KeyType: "RANGE" }
       ]
     , ProvisionedThroughput: {
-        ReadCapacityUnits: 5
-      , WriteCapacityUnits: 5
+        ReadCapacityUnits: 1
+      , WriteCapacityUnits: 1
       }
     }
 
-    db.createTable( tableParams, function( err, data ) {
-      if ( err )
-        console.log( err.message )
-
-      callback()
-    } )
+    db.createTable( tableParams, callback )
   } )
 
   t.afterEach( function( callback ) {
-    db.deleteTable( { TableName: DYNAMODB_TABLENAME }, function( err, data ) {
-      if ( err )
-        console.log( err.message )
-
-      callback()
-    } )
+    db.deleteTable( { TableName: DYNAMODB_TABLENAME }, callback )
   } )
 
   t.test( "appending events", function( a ) {
-    var eventStore = EventStore.create( {
-        region: DYNAMODB_REGION
-      , endpoint: DYNAMODB_ENDPOINT
-      , tableName: DYNAMODB_TABLENAME
-    } )
+    var eventStore = EventStore.create( DYNAMODB_TABLENAME )
 
-    var aggregate = {
-      id: "1"
-    , version: 0
-    }
+    var aggregate = { id: "1" , version: 0 }
 
     var eventsToAppend = [
       { name: "Created", data: { name: "foo" } }

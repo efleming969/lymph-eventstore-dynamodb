@@ -3,9 +3,10 @@ version: '2'
 services:
   database:
     image: "efleming969/aws-dynamo:0.1.0"
+    container_name: database
     ports:
       - "8000:8000"
-  library:
+  tests:
     image: "efleming969/aws-node:0.1.0"
     working_dir: /usr/src/app
     volumes:
@@ -15,4 +16,6 @@ services:
     environment:
       - AWS_ACCESS_KEY_ID=DUMMY_KEY
       - AWS_SECRET_ACCESS_KEY=DUMMY_SECRET
-    command: bash
+      - AWS_REGION="localhost"
+      - AWS_DYNAMODB_ENDPOINT=http://database:8000
+    command: node test.js
