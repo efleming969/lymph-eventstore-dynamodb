@@ -4,6 +4,7 @@ var EventStore = function( tableName ) {
   this.tableName = tableName
 
   console.log( "connecting to", process.env.AWS_DYNAMODB_ENDPOINT )
+
   this.db = new AWS.DynamoDB.DocumentClient( {
     region: process.env.AWS_REGION
   , endpoint: process.env.AWS_DYNAMODB_ENDPOINT
@@ -54,7 +55,7 @@ EventStore.prototype.append = function( aggregate, events, callback ) {
 
     db.put( params, function( err ) {
       if ( err )
-        console.log( err )
+        console.log( "appending", parms, err )
 
       if ( putCount == 1 )
         callback( enrichedEvents )
