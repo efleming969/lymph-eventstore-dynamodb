@@ -11,6 +11,24 @@ var EventStore = function( tableName ) {
   } )
 }
 
+EventStore.prototype.getAll = function( callback ) {
+  var db = this.db
+  var tableName = this.tableName
+
+  var params = {
+    TableName: tableName
+  }
+
+  db.scan( params, function( err, data ) {
+    if ( err )
+      callback( console.log( err ) )
+    else
+      callback( data.Items.map( function( item ) {
+        return Object.assign( {}, item, { data: JSON.parse( item.data ) } )
+      } ) )
+  } )
+}
+
 EventStore.prototype.get = function( id, version, callback ) {
   var db = this.db
   var tableName = this.tableName
@@ -34,11 +52,12 @@ EventStore.prototype.get = function( id, version, callback ) {
 EventStore.prototype.append = function( aggregate, events, callback ) {
   var db = this.db
   var tableName = this.tableName
+  var baseVersion = aggregate.version > 0 ? aggregate.version + 1 : 0
 
   var enrichedEvents = events.map( function( event, index ) {
     return {
       id: aggregate.id
-    , version: aggregate.version + index
+    , version: baseVersion + index
     , created: new Date().getTime()
     , name: event.name
     , data: JSON.stringify( event.data )
