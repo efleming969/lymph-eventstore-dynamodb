@@ -17,5 +17,5 @@ services:
       - AWS_ACCESS_KEY_ID=DUMMY_KEY
       - AWS_SECRET_ACCESS_KEY=DUMMY_SECRET
       - AWS_REGION="localhost"
-      - AWS_DYNAMODB_ENDPOINT=http://database:8000
+      - AWS_ENDPOINT_DYNAMODB=http://database:8000
     command: node test.js

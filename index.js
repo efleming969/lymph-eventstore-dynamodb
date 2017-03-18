@@ -3,11 +3,10 @@ var AWS = require( "aws-sdk" )
 var EventStore = function( tableName ) {
   this.tableName = tableName
 
-  console.log( "connecting to", process.env.AWS_DYNAMODB_ENDPOINT )
+  console.log( "connecting to", process.env.AWS_ENDPOINT_DYNAMODB )
 
   this.db = new AWS.DynamoDB.DocumentClient( {
-    region: process.env.AWS_REGION
-  , endpoint: process.env.AWS_DYNAMODB_ENDPOINT
+    endpoint: process.env.AWS_ENDPOINT_DYNAMODB
   } )
 }
 
