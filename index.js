@@ -72,11 +72,14 @@ EventStore.prototype.append = function( aggregate, events, callback ) {
     }
 
     db.put( params, function( err ) {
-      if ( err )
-        console.log( "appending", parms, err )
+      if ( err ) {
+        console.log( "appending", params, err )
+        callback( [] )
+      }
 
-      if ( putCount == 1 )
+      if ( putCount == 1 ) {
         callback( enrichedEvents )
+      }
 
       putCount = putCount - 1
     } )
