@@ -8,7 +8,7 @@ var DYNAMODB_TABLENAME = "events"
 Tap.test( "dynamodb event store", function( t ) {
 
   var db = new AWS.DynamoDB( {
-    endpoint: process.env.AWS_ENDPOINT_DYNAMODB
+    endpoint: process.env.DYNAMODB_ENDPOINT
   } )
 
   t.beforeEach( function( callback ) {
@@ -35,7 +35,8 @@ Tap.test( "dynamodb event store", function( t ) {
   } )
 
   t.test( "appending events", function( a ) {
-    var eventStore = EventStore.create( DYNAMODB_TABLENAME )
+    var eventStore = EventStore.create( DYNAMODB_TABLENAME
+    , process.env.DYNAMODB_ENDPOINT )
 
     var aggregate = { id: "1" , version: 0 }
 

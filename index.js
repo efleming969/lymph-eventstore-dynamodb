@@ -1,13 +1,9 @@
 var AWS = require( "aws-sdk" )
 
-var EventStore = function( tableName ) {
+var EventStore = function( tableName, endpoint ) {
   this.tableName = tableName
-
-  console.log( "connecting to", process.env.AWS_ENDPOINT_DYNAMODB )
-
-  this.db = new AWS.DynamoDB.DocumentClient( {
-    endpoint: process.env.AWS_ENDPOINT_DYNAMODB
-  } )
+  console.log( "connecting to", endpoint )
+  this.db = new AWS.DynamoDB.DocumentClient( { endpoint: endpoint } )
 }
 
 EventStore.prototype.getAll = function( callback ) {
@@ -86,6 +82,6 @@ EventStore.prototype.append = function( aggregate, events, callback ) {
   } )
 }
 
-exports.create = function( tableName ) {
-  return new EventStore( tableName )
+exports.create = function( tableName, endpoint ) {
+  return new EventStore( tableName, endpoint )
 }
