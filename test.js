@@ -34,30 +34,43 @@ Tap.test( "dynamodb event store", function( t ) {
     db.deleteTable( { TableName: DYNAMODB_TABLENAME }, callback )
   } )
 
-  t.test( "appending events", function( a ) {
-    var eventStore = EventStore.create( DYNAMODB_TABLENAME
+  t.test( "appending an event", function( a ) {
+    var es = EventStore.create(
+      DYNAMODB_TABLENAME
     , process.env.DYNAMODB_ENDPOINT )
 
-    var aggregate = { id: "1" , version: 0 }
+    var event = { version: 1, name: "Created", id: "1", data: { name: "foo" } }
 
-    var eventsToAppend = [
-      { name: "Created", data: { name: "foo" } }
-    , { name: "Deleted", data: {} }
-    ]
-
-    eventStore.append( aggregate, eventsToAppend, function() {
-      eventStore.get( "1", 0, function( eventsAppended ) {
-        a.equal( eventsAppended.length, 2, "should have appended 2 events" )
-        var firstEvent = eventsAppended[ 0 ]
-        a.equal( firstEvent.id, "1", "first event should have an aggregate id" )
-        a.deepEqual( firstEvent.data, { name: "foo" }, "first event should have serialized data" )
-        a.equal( firstEvent.version, 0, "first event should be version zero" )
-        a.equal( firstEvent.name, "Created", "first event name should be Created" )
-        a.ok( firstEvent.created < new Date().getTime(), "first event created value should be greater that current time" )
+    es.append( function( err ) {
+      a.notOk( err )
+      es.get( function( events ) {
+        a.equal( events[0].id, "1", "first event should have an aggregate id" )
+        a.deepEqual( events[0].data, { name: "foo" }, "first event should have serialized data" )
+        a.equal( events[0].version, 1, "first event should be version zero" )
+        a.equal( events[0].name, "Created", "first event name should be Created" )
         a.end()
-      } )
-    } )
+      }, "1", 0 )
+    }, event )
   } )
 
+  t.test( "getting all events", function( a ) {
+    var es = EventStore.create(
+      DYNAMODB_TABLENAME
+    , process.env.DYNAMODB_ENDPOINT )
+
+    var event1 = { version: 1, name: "Created", id: "1", data: { name: "foo" } }
+    var event2 = { version: 1, name: "Created", id: "2", data: { name: "bar" } }
+
+    es.append( function( err ) {
+      a.notOk( err )
+      es.append( function( err ) {
+        a.notOk( err )
+        es.getAll( function( events ) {
+          a.equal( events.length, 2 )
+          a.end()
+        } )
+      }, event2 )
+    }, event1 )
+  } )
   t.end()
 } )

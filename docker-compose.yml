@@ -3,7 +3,6 @@ version: '2'
 services:
   database:
     image: "efleming969/aws-dynamo:0.1.0"
-    container_name: database
     ports:
       - "8000:8000"
   tests:
@@ -18,4 +17,4 @@ services:
       - AWS_SECRET_ACCESS_KEY=DUMMY_SECRET
       - AWS_REGION=localhost
       - DYNAMODB_ENDPOINT=http://database:8000
-    command: node test.js
+    command: ./node_modules/.bin/tap test.js
