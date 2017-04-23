@@ -25,7 +25,7 @@ EventStore.prototype.getAll = function( callback ) {
   } )
 }
 
-EventStore.prototype.get = function( callback, id, version ) {
+EventStore.prototype.get = function( id, version, callback ) {
   var db = this.db
   var tableName = this.tableName
 
@@ -40,7 +40,7 @@ EventStore.prototype.get = function( callback, id, version ) {
   } )
 }
 
-EventStore.prototype.append = function( callback, event ) {
+EventStore.prototype.append = function( event, callback ) {
   var db = this.db
   var tableName = this.tableName
 
@@ -52,7 +52,10 @@ EventStore.prototype.append = function( callback, event ) {
     callback( "invalid event" )
   }
   else {
-    var params = { TableName: tableName, Item: serializeData( event ) }
+    var params = {
+      TableName: tableName
+    , Item: serializeData( event )
+    }
 
     db.put( params, function( err ) {
       callback( err ? console.log( err ) : undefined )
