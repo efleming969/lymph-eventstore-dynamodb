@@ -1,76 +1,51 @@
 var AWS = require( "aws-sdk" )
-var Tap = require( "tap" )
+var test = require( "ava" ).cb
 
 var EventStore = require( "./index.js" )
 
 var DYNAMODB_TABLENAME = "events"
+var DYNAMODB_ENDPOINT = "http://0.0.0.0:8000"
 
-Tap.test( "dynamodb event store", function( t ) {
+var db = new AWS.DynamoDB( {
+  region: "local"
+, endpoint: DYNAMODB_ENDPOINT
+} )
 
-  var db = new AWS.DynamoDB( {
-    endpoint: process.env.DYNAMODB_ENDPOINT
+test.before( function( t ) {
+  var tableParams = {
+    TableName: DYNAMODB_TABLENAME
+  , AttributeDefinitions: [
+      { AttributeName: "id" , AttributeType: "S" }
+    , { AttributeName: "version" , AttributeType: "N" }
+    ]
+  , KeySchema: [
+      { AttributeName: "id", KeyType: "HASH" }
+    , { AttributeName: "version", KeyType: "RANGE" }
+    ]
+  , ProvisionedThroughput: { ReadCapacityUnits: 1 , WriteCapacityUnits: 1 }
+  }
+
+  db.deleteTable( { TableName: DYNAMODB_TABLENAME }, function() {
+    db.createTable( tableParams, t.end )
   } )
+} )
 
-  t.beforeEach( function( callback ) {
-    var tableParams = {
-      TableName: DYNAMODB_TABLENAME
-    , AttributeDefinitions: [
-        { AttributeName: "id" , AttributeType: "S" }
-      , { AttributeName: "version" , AttributeType: "N" }
-      ]
-    , KeySchema: [
-        { AttributeName: "id", KeyType: "HASH" }
-      , { AttributeName: "version", KeyType: "RANGE" }
-      ]
-    , ProvisionedThroughput: { ReadCapacityUnits: 1 , WriteCapacityUnits: 1 }
-    }
+test( "appending an event", function( t ) {
+  var es = EventStore.create( DYNAMODB_TABLENAME, DYNAMODB_ENDPOINT )
+  var event1 = { version: 1, name: "Created", id: "1", data: { name: "foo" } }
+  var event2 = { version: 2, name: "Created", id: "2", data: { name: "bar" } }
 
-    console.log( "creating test table" )
-    db.createTable( tableParams, callback )
-  } )
-
-  t.afterEach( function( callback ) {
-    console.log( "deleting test table" )
-    db.deleteTable( { TableName: DYNAMODB_TABLENAME }, callback )
-  } )
-
-  t.test( "appending an event", function( a ) {
-    var es = EventStore.create(
-      DYNAMODB_TABLENAME
-    , process.env.DYNAMODB_ENDPOINT )
-
-    var event = { version: 1, name: "Created", id: "1", data: { name: "foo" } }
-
-    es.append( function( err ) {
-      a.notOk( err )
-      es.get( function( events ) {
-        a.equal( events[0].id, "1", "first event should have an aggregate id" )
-        a.deepEqual( events[0].data, { name: "foo" }, "first event should have serialized data" )
-        a.equal( events[0].version, 1, "first event should be version zero" )
-        a.equal( events[0].name, "Created", "first event name should be Created" )
-        a.end()
-      }, "1", 0 )
-    }, event )
-  } )
-
-  t.test( "getting all events", function( a ) {
-    var es = EventStore.create(
-      DYNAMODB_TABLENAME
-    , process.env.DYNAMODB_ENDPOINT )
-
-    var event1 = { version: 1, name: "Created", id: "1", data: { name: "foo" } }
-    var event2 = { version: 1, name: "Created", id: "2", data: { name: "bar" } }
-
-    es.append( function( err ) {
-      a.notOk( err )
-      es.append( function( err ) {
-        a.notOk( err )
+  es.append( event1, function() {
+    es.append( event2, function() {
+      es.get( "1", 0, function( events ) {
+        t.deepEqual( events, [
+          { id: "1", data: { name: "foo" }, version: 1, name: "Created" }
+        ] )
         es.getAll( function( events ) {
-          a.equal( events.length, 2 )
-          a.end()
+          t.is( events.length, 2 )
+          t.end()
         } )
-      }, event2 )
-    }, event1 )
+      } )
+    } )
   } )
-  t.end()
 } )

@@ -1,13 +1,13 @@
 {
   "name": "lymph-eventstore-dynamodb",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "DynamoDB event storage",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.22.0"
+    "aws-sdk": "^2.45.0"
   },
   "devDependencies": {
-    "tap": "^10.3.0"
+    "ava": "^0.19.1"
   }
 }

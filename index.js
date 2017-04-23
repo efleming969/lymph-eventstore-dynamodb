@@ -1,7 +1,8 @@
 var AWS = require( "aws-sdk" )
 
 var deserializeData = function( item ) {
-  return Object.assign( {}, item, { data: JSON.parse( item.data ) } )
+  return Object.assign(
+    {}, item, { data: JSON.parse( item.data ) } )
 }
 
 var serializeData = function( item ) {
@@ -10,41 +11,34 @@ var serializeData = function( item ) {
 }
 
 var EventStore = function( tableName, endpoint ) {
-  this.tableName = tableName
-  console.log( "connecting to", endpoint )
-  this.db = new AWS.DynamoDB.DocumentClient( { endpoint: endpoint } )
-}
-
-EventStore.prototype.getAll = function( callback ) {
-  var db = this.db
-  var tableName = this.tableName
-  var params = { TableName: tableName }
-
-  db.scan( params, function( err, data ) {
-    callback( err ?  console.log( err ) : data.Items.map( deserializeData ) )
+  console.log( "connecting to", endpoint + "/" + tableName )
+  this.db = new AWS.DynamoDB.DocumentClient( {
+    params: { TableName: tableName }
+  , endpoint: endpoint
   } )
 }
 
-EventStore.prototype.get = function( id, version, callback ) {
-  var db = this.db
-  var tableName = this.tableName
-
-  var params = {
-    TableName: tableName
-  , KeyConditionExpression: "id = :id and version > :version"
-  , ExpressionAttributeValues: { ":id": id, ":version": version }
-  }
-
-  db.query( params, function( err, data ) {
+EventStore.prototype.getAll = function( callback ) {
+  this.db.scan( {}, function( err, data ) {
     callback( err ? console.log( err ) : data.Items.map( deserializeData ) )
   } )
 }
 
-EventStore.prototype.append = function( event, callback ) {
-  var db = this.db
-  var tableName = this.tableName
+EventStore.prototype.get = function( id, version, callback ) {
+  var params = {
+    KeyConditionExpression: "id = :id and version > :version"
+  , ExpressionAttributeValues: { ":id": id, ":version": version }
+  }
 
-  var isValid = ["name","id","version","data"].reduce( function( valid, key ) {
+  this.db.query( params, function( err, data ) {
+    callback( err ? console.log( err ) : data.Items.map( deserializeData ) )
+  } )
+}
+
+var requiredFields = ["name","id","version","data"]
+
+EventStore.prototype.append = function( event, callback ) {
+  var isValid = requiredFields.reduce( function( valid, key ) {
     return valid && ( Object.keys( event ).indexOf( key ) > -1 )
   }, true )
 
@@ -52,13 +46,10 @@ EventStore.prototype.append = function( event, callback ) {
     callback( "invalid event" )
   }
   else {
-    var params = {
-      TableName: tableName
-    , Item: serializeData( event )
-    }
+    var params = { Item: serializeData( event ) }
 
-    db.put( params, function( err ) {
-      callback( err ? console.log( err ) : undefined )
+    this.db.put( params, function( err, data ) {
+      callback( err ? console.log( err ) : data )
     } )
   }
 }
