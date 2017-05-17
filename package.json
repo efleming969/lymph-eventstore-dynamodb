@@ -1,13 +1,22 @@
 {
   "name": "lymph-eventstore-dynamodb",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "DynamoDB event storage",
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "aws-sdk": "^2.45.0"
   },
   "devDependencies": {
-    "ava": "^0.19.1"
+    "aws-sdk": "^2.45.0",
+    "jest": "^20.0.3"
+  },
+  "jest": {
+    "testMatch": [
+      "**/*.tests.js"
+    ]
+  },
+  "scripts": {
+    "coverage": "jest --coverage",
+    "test": "jest"
   }
 }

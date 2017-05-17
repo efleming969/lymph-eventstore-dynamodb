@@ -1,5 +1,4 @@
 var AWS = require( "aws-sdk" )
-var test = require( "ava" ).cb
 
 var EventStore = require( "./index.js" )
 
@@ -11,39 +10,46 @@ var db = new AWS.DynamoDB( {
 , endpoint: DYNAMODB_ENDPOINT
 } )
 
-test.before( function( t ) {
+beforeAll( function( done ) {
   var tableParams = {
     TableName: DYNAMODB_TABLENAME
   , AttributeDefinitions: [
-      { AttributeName: "id" , AttributeType: "S" }
+      { AttributeName: "aggregateId" , AttributeType: "S" }
     , { AttributeName: "version" , AttributeType: "N" }
     ]
   , KeySchema: [
-      { AttributeName: "id", KeyType: "HASH" }
+      { AttributeName: "aggregateId", KeyType: "HASH" }
     , { AttributeName: "version", KeyType: "RANGE" }
     ]
   , ProvisionedThroughput: { ReadCapacityUnits: 1 , WriteCapacityUnits: 1 }
   }
 
   db.deleteTable( { TableName: DYNAMODB_TABLENAME }, function() {
-    db.createTable( tableParams, t.end )
+    db.createTable( tableParams, done )
   } )
 } )
 
-test( "appending an event", function( t ) {
-  var es = EventStore.create( DYNAMODB_TABLENAME, DYNAMODB_ENDPOINT )
-  var event1 = { version: 1, name: "Created", id: "1", data: { name: "foo" } }
-  var event2 = { version: 2, name: "Created", id: "2", data: { name: "bar" } }
+test( "appending an event", function( done ) {
+
+  var dbc = new AWS.DynamoDB.DocumentClient( {
+    region: "local"
+  , endpoint: DYNAMODB_ENDPOINT
+  , params: { TableName: DYNAMODB_TABLENAME }
+  } )
+
+  var es = EventStore.create( dbc )
+  var event1 = { version: 1, name: "Created", aggregateId: "1", data: { name: "fizz" } }
+  var event2 = { version: 2, name: "Created", aggregateId: "2", data: { name: "buzz" } }
 
   es.append( event1, function() {
     es.append( event2, function() {
       es.get( "1", 0, function( events ) {
-        t.deepEqual( events, [
-          { id: "1", data: { name: "foo" }, version: 1, name: "Created" }
+        expect( events ).toEqual( [
+          { aggregateId: "1", data: { name: "fizz" }, version: 1, name: "Created" }
         ] )
         es.getAll( function( events ) {
-          t.is( events.length, 2 )
-          t.end()
+          expect( events.length ).toBe( 2 )
+          done()
         } )
       } )
     } )

@@ -1,5 +1,3 @@
-var AWS = require( "aws-sdk" )
-
 var deserializeData = function( item ) {
   return Object.assign(
     {}, item, { data: JSON.parse( item.data ) } )
@@ -10,32 +8,31 @@ var serializeData = function( item ) {
     {}, item, { data: JSON.stringify( item.data ) } )
 }
 
-var EventStore = function( tableName, endpoint ) {
-  console.log( "connecting to", endpoint + "/" + tableName )
-  this.db = new AWS.DynamoDB.DocumentClient( {
-    params: { TableName: tableName }
-  , endpoint: endpoint
-  } )
+var EventStore = function( dbc ) {
+  this.dbc = dbc
 }
 
 EventStore.prototype.getAll = function( callback ) {
-  this.db.scan( {}, function( err, data ) {
+  this.dbc.scan( {}, function( err, data ) {
     callback( err ? console.log( err ) : data.Items.map( deserializeData ) )
   } )
 }
 
-EventStore.prototype.get = function( id, version, callback ) {
+EventStore.prototype.get = function( aggregateId, version, callback ) {
   var params = {
-    KeyConditionExpression: "id = :id and version > :version"
-  , ExpressionAttributeValues: { ":id": id, ":version": version }
+    KeyConditionExpression: "aggregateId = :aggregateId and version > :version"
+  , ExpressionAttributeValues: {
+      ":aggregateId": aggregateId
+    , ":version": version
+    }
   }
 
-  this.db.query( params, function( err, data ) {
+  this.dbc.query( params, function( err, data ) {
     callback( err ? console.log( err ) : data.Items.map( deserializeData ) )
   } )
 }
 
-var requiredFields = ["name","id","version","data"]
+var requiredFields = ["name","aggregateId","version","data"]
 
 EventStore.prototype.append = function( event, callback ) {
   var isValid = requiredFields.reduce( function( valid, key ) {
@@ -48,12 +45,12 @@ EventStore.prototype.append = function( event, callback ) {
   else {
     var params = { Item: serializeData( event ) }
 
-    this.db.put( params, function( err, data ) {
+    this.dbc.put( params, function( err, data ) {
       callback( err ? console.log( err ) : data )
     } )
   }
 }
 
-exports.create = function( tableName, endpoint ) {
-  return new EventStore( tableName, endpoint )
+exports.create = function( dbc ) {
+  return new EventStore( dbc )
 }
